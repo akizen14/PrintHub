@@ -115,7 +115,7 @@ async def seed_data():
     insert_one("printers", printer2)
     
     # Create 4 sample orders
-    # Order 1: Urgent (pickup in 30 minutes)
+    # Order 1: Urgent (pickup in 30 minutes) - PAID
     order1 = {
         "id": str(uuid.uuid4()),
         "studentName": "Alice Johnson",
@@ -127,7 +127,8 @@ async def seed_data():
         "sides": "duplex",
         "size": "A4",
         "pickupTime": now + 1800,  # 30 minutes from now
-        "status": "Pending",
+        "status": "Queued",
+        "paymentStatus": "paid",
         "queueType": "urgent",
         "priorityIndex": now - 3000,
         "priorityScore": 5.0,
@@ -140,7 +141,7 @@ async def seed_data():
     }
     insert_one("orders", order1)
     
-    # Order 2: Normal (small job)
+    # Order 2: Normal (small job) - PAID
     order2 = {
         "id": str(uuid.uuid4()),
         "studentName": "Bob Smith",
@@ -152,7 +153,8 @@ async def seed_data():
         "sides": "single",
         "size": "A4",
         "pickupTime": None,
-        "status": "Pending",
+        "status": "Queued",
+        "paymentStatus": "paid",
         "queueType": "normal",
         "priorityIndex": now - 2000,
         "priorityScore": 3.0,
@@ -165,7 +167,7 @@ async def seed_data():
     }
     insert_one("orders", order2)
     
-    # Order 3: Bulk (large job)
+    # Order 3: Bulk (large job) - UNPAID (Pending payment)
     order3 = {
         "id": str(uuid.uuid4()),
         "studentName": "Charlie Davis",
@@ -178,6 +180,7 @@ async def seed_data():
         "size": "A4",
         "pickupTime": None,
         "status": "Pending",
+        "paymentStatus": "unpaid",
         "queueType": "bulk",
         "priorityIndex": now - 1000,
         "priorityScore": 1.0,
@@ -190,7 +193,7 @@ async def seed_data():
     }
     insert_one("orders", order3)
     
-    # Order 4: Normal (another small job)
+    # Order 4: Normal (another small job) - PAID
     order4 = {
         "id": str(uuid.uuid4()),
         "studentName": "Diana Prince",
@@ -202,7 +205,8 @@ async def seed_data():
         "sides": "single",
         "size": "A4",
         "pickupTime": None,
-        "status": "Pending",
+        "status": "Queued",
+        "paymentStatus": "paid",
         "queueType": "normal",
         "priorityIndex": now - 500,
         "priorityScore": 2.5,
@@ -219,5 +223,6 @@ async def seed_data():
         "message": "Database seeded successfully",
         "printers": 2,
         "orders": 4,
+        "note": "3 orders are paid (Queued), 1 order is unpaid (Pending)",
         "adminPassword": "printhub2025"
     }
