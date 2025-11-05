@@ -40,6 +40,8 @@ export interface Order {
   pickupTime?: number;
   status: "Pending" | "Queued" | "Printing" | "Ready" | "Collected" | "Cancelled";
   paymentStatus: "unpaid" | "paid" | "refunded";
+  transactionId?: string;
+  paidAt?: number;
   queueType: "urgent" | "normal" | "bulk";
   priorityIndex: number;
   priceTotal: number;
@@ -178,9 +180,10 @@ export const api = {
     });
   },
 
-  async confirmPayment(orderId: string): Promise<Order> {
+  async confirmPayment(orderId: string, paymentData?: { transactionId?: string }): Promise<Order> {
     return fetchAPI<Order>(`/orders/${orderId}/confirm-payment`, {
       method: "POST",
+      body: paymentData ? JSON.stringify(paymentData) : undefined,
     });
   },
 

@@ -32,6 +32,8 @@ class Order(BaseModel):
     pickupTime: Optional[int] = None
     status: Literal["Pending", "Queued", "Printing", "Ready", "Collected", "Cancelled", "Error"] = "Pending"
     paymentStatus: Literal["unpaid", "paid", "refunded"] = "unpaid"
+    transactionId: Optional[str] = None
+    paidAt: Optional[int] = None
     queueType: Literal["urgent", "normal", "bulk"] = "normal"
     priorityIndex: int
     priorityScore: float = 0.0
@@ -46,10 +48,18 @@ class Order(BaseModel):
 class OrderUpdate(BaseModel):
     status: Optional[Literal["Pending", "Queued", "Printing", "Ready", "Collected", "Cancelled", "Error"]] = None
     paymentStatus: Optional[Literal["unpaid", "paid", "refunded"]] = None
+    transactionId: Optional[str] = None
+    paidAt: Optional[int] = None
     progressPct: Optional[int] = None
     assignedPrinterId: Optional[str] = None
     priorityIndex: Optional[int] = None
     estimatedSec: Optional[int] = None
+
+
+class PaymentConfirmation(BaseModel):
+    transactionId: Optional[str] = None
+    paymentMethod: Optional[str] = "UPI"
+    notes: Optional[str] = None
 
 
 class Printer(BaseModel):

@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 import json
 
-from ..models import Order, OrderIn, OrderUpdate
+from ..models import Order, OrderIn, OrderUpdate, PaymentConfirmation
 from ..storage import insert_one, find_all, find_by_id, update_by_id, find_by_query, get_single
 from ..scheduler import classify_queue, priority_score, normalize_priority
 from ..file_handler import process_uploaded_file, FileValidationError, get_file_info
@@ -289,8 +289,11 @@ async def update_order(order_id: str, update: OrderUpdate):
 
 
 @router.post("/{order_id}/confirm-payment", response_model=Order)
-async def confirm_payment(order_id: str):
-    """Confirm payment for an order and move it to Queued status."""
+async def confirm_payment(order_id: str, payment_data: Optional[PaymentConfirmation] = None):
+    """
+    Confirm payment for an order and move it to Queued status.
+    Optionally accepts transaction ID for payment tracking.
+    """
     order = find_by_id("orders", order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -306,12 +309,18 @@ async def confirm_payment(order_id: str):
     if order.get("paymentStatus") == PAYMENT_STATUS_PAID:
         raise HTTPException(status_code=400, detail="Payment already confirmed")
     
-    # Update payment status and move to Queued
+    # Prepare updates
+    now = int(time.time())
     updates = {
         "paymentStatus": PAYMENT_STATUS_PAID,
         "status": ORDER_STATUS_QUEUED,
-        "updatedAt": int(time.time())
+        "paidAt": now,
+        "updatedAt": now
     }
+    
+    # Add transaction ID if provided
+    if payment_data and payment_data.transactionId:
+        updates["transactionId"] = payment_data.transactionId
     
     update_by_id("orders", order_id, updates)
     

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api, Rates } from "@/utils/api";
-import { computePrice, formatPrice } from "@/lib/price";
+import { computePrice, formatPrice } from "@/utils/price";
 
 export default function NewOrderPage() {
   const router = useRouter();

@@ -35,6 +35,8 @@ export default function UPIIntentPage() {
   const [qrCode, setQrCode] = useState("");
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
+  const [transactionId, setTransactionId] = useState("");
+  const [showTransactionInput, setShowTransactionInput] = useState(false);
 
   // Generate UPI deep link and QR code when params change
   useEffect(() => {
@@ -84,8 +86,9 @@ export default function UPIIntentPage() {
 
     setConfirming(true);
     try {
-      // Call the payment confirmation API
-      await api.confirmPayment(orderId);
+      // Call the payment confirmation API with optional transaction ID
+      const payload = transactionId.trim() ? { transactionId: transactionId.trim() } : undefined;
+      await api.confirmPayment(orderId, payload);
       
       // Redirect to order details page
       router.push(`/orders/${orderId}`);
@@ -96,6 +99,10 @@ export default function UPIIntentPage() {
     } finally {
       setConfirming(false);
     }
+  };
+
+  const handleIHavePaid = () => {
+    setShowTransactionInput(true);
   };
 
   return (
@@ -166,14 +173,47 @@ export default function UPIIntentPage() {
           Pay via UPI App
         </button>
 
-        {/* Manual Confirmation Button */}
-        <button 
-          onClick={handleConfirmPayment}
-          disabled={confirming}
-          className="w-full mt-3 border-2 border-gray-300 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {confirming ? "Confirming..." : "I have paid"}
-        </button>
+        {/* Transaction ID Input (shown after clicking I have paid) */}
+        {showTransactionInput ? (
+          <div className="mt-4 space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                UPI Transaction ID (Optional)
+              </label>
+              <input
+                type="text"
+                value={transactionId}
+                onChange={(e) => setTransactionId(e.target.value)}
+                placeholder="e.g., 123456789012"
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Enter your UPI transaction/reference ID for verification (optional)
+              </p>
+            </div>
+            <button 
+              onClick={handleConfirmPayment}
+              disabled={confirming}
+              className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {confirming ? "Confirming Payment..." : "Confirm Payment"}
+            </button>
+            <button 
+              onClick={() => setShowTransactionInput(false)}
+              disabled={confirming}
+              className="w-full border-2 border-gray-300 text-gray-700 py-2 px-6 rounded-lg font-medium hover:bg-gray-50 transition-all"
+            >
+              Back
+            </button>
+          </div>
+        ) : (
+          <button 
+            onClick={handleIHavePaid}
+            className="w-full mt-3 border-2 border-purple-600 text-purple-600 py-3 px-6 rounded-lg font-semibold hover:bg-purple-50 transition-all"
+          >
+            I have paid
+          </button>
+        )}
 
         {/* Supported Apps Note */}
         <div className="mt-6 text-center">

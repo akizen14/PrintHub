@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, Order, Printer } from "@/utils/api";
-import { formatPrice } from "@/lib/price";
+import { formatPrice } from "@/utils/price";
 
 const STATUS_COLORS = {
   Pending: "bg-gray-100 text-gray-800",
@@ -213,6 +213,29 @@ export default function OrderDetailPage() {
                 <p className="text-sm text-gray-600">
                   Status: {printer.status} • {printer.ppm} pages/min
                 </p>
+              </div>
+            </div>
+          )}
+
+          {/* Payment Info */}
+          {order.transactionId && (
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">
+                Payment Information
+              </h2>
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="text-sm">
+                  <span className="text-gray-600">Transaction ID:</span>
+                  <p className="font-mono font-medium text-gray-900 mt-1">{order.transactionId}</p>
+                </div>
+                {order.paidAt && (
+                  <div className="text-sm mt-2">
+                    <span className="text-gray-600">Paid At:</span>
+                    <p className="font-medium text-gray-900 mt-1">
+                      {new Date(order.paidAt * 1000).toLocaleString()}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}
