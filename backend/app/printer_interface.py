@@ -1,13 +1,23 @@
 """
 Windows printer integration using pywin32
 Auto-discover printers, send print jobs, monitor status
+Note: This module only works on Windows systems
 """
-import win32print
-import win32api
-import win32con
 import os
+import sys
 from typing import List, Dict, Optional
 from pathlib import Path
+
+# Only import Windows-specific modules on Windows
+if sys.platform == "win32":
+    import win32print
+    import win32api
+    import win32con
+else:
+    # Provide stub implementations for non-Windows systems
+    win32print = None
+    win32api = None
+    win32con = None
 
 
 def get_available_printers() -> List[Dict]:
@@ -15,6 +25,10 @@ def get_available_printers() -> List[Dict]:
     Get list of all installed printers on Windows
     Returns list of printer info dictionaries
     """
+    # Return empty list on non-Windows systems
+    if sys.platform != "win32" or win32print is None:
+        return []
+    
     printers = []
     
     try:
@@ -100,6 +114,8 @@ def get_available_printers() -> List[Dict]:
 
 def get_default_printer() -> Optional[str]:
     """Get the system default printer name"""
+    if sys.platform != "win32" or win32print is None:
+        return None
     try:
         return win32print.GetDefaultPrinter()
     except Exception:
@@ -108,6 +124,8 @@ def get_default_printer() -> Optional[str]:
 
 def set_default_printer(printer_name: str) -> bool:
     """Set the system default printer"""
+    if sys.platform != "win32" or win32print is None:
+        return False
     try:
         win32print.SetDefaultPrinter(printer_name)
         return True
@@ -128,6 +146,9 @@ def print_pdf_file(printer_name: str, pdf_path: str, copies: int = 1) -> bool:
     Returns:
         True if print job submitted successfully
     """
+    if sys.platform != "win32" or win32print is None:
+        print("Printing is only supported on Windows systems")
+        return False
     try:
         # Verify file exists
         if not os.path.exists(pdf_path):
@@ -222,6 +243,13 @@ def get_printer_status(printer_name: str) -> Dict:
         - jobs_in_queue: number of pending jobs
         - current_job: info about active job (if any)
     """
+    if sys.platform != "win32" or win32print is None:
+        return {
+            "status": "unavailable",
+            "jobs_in_queue": 0,
+            "current_job": None,
+            "error": "Printer status only available on Windows"
+        }
     try:
         handle = win32print.OpenPrinter(printer_name)
         printer_info = win32print.GetPrinter(handle, 2)

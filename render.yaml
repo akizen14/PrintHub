@@ -1,0 +1,35 @@
+services:
+  # Backend API Service
+  - type: web
+    name: printhub-backend
+    runtime: python
+    buildCommand: cd backend && pip install -r requirements-cloud.txt
+    startCommand: cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: CORS_ORIGINS
+        value: "*"
+        # IMPORTANT: After deployment, update this to your specific frontend URL
+        # Example: https://printhub-web.onrender.com
+        # Using * is convenient for initial setup but should be restricted in production
+      - key: DATA_DIR
+        value: /opt/render/project/src/data
+    disk:
+      name: printhub-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
+
+  # Frontend Web Service
+  - type: web
+    name: printhub-web
+    runtime: node
+    buildCommand: cd web && npm install && npm run build
+    startCommand: cd web && npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.17.0
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
+      - key: PORT
+        value: 3000

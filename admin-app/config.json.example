@@ -1,0 +1,4 @@
+{
+  "api_url": "http://localhost:8000",
+  "comment": "Change api_url to your hosted backend URL (e.g., https://printhub-backend.onrender.com)"
+}

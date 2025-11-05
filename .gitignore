@@ -57,3 +57,6 @@ yarn-error.log*
 .env
 .env.local
 .env.*.local
+
+# Admin app config
+admin-app/config.json

@@ -1,10 +1,11 @@
 # PrintHub 🖨️
 
-A lightweight, local-first print management system with student ordering, admin queue management, and printer tracking.
+A lightweight print management system with student ordering, admin queue management, and printer tracking. **Now deployable to the cloud!**
 
-![Status](https://img.shields.io/badge/status-ready-brightgreen)
+![Status](https://img.shields.io/badge/status-production--ready-brightgreen)
 ![Python](https://img.shields.io/badge/python-3.8+-blue)
 ![Node](https://img.shields.io/badge/node-18+-green)
+![Deploy](https://img.shields.io/badge/deploy-render%20%7C%20heroku%20%7C%20docker-purple)
 
 ## 🎯 Features
 
@@ -17,6 +18,8 @@ A lightweight, local-first print management system with student ordering, admin 
 - ✅ **Progress Simulation** - Visual progress bars for active print jobs
 - ✅ **No Database Server** - Everything stored in JSON files (TinyDB)
 - ✅ **Modern UI** - Clean, minimal design with Tailwind CSS
+- ✅ **Cloud Deployable** - Deploy to Render, Heroku, DigitalOcean, AWS
+- ✅ **Remote Admin** - Desktop app connects to hosted backend
 
 ## 🏗️ Architecture
 
@@ -42,6 +45,8 @@ A lightweight, local-first print management system with student ordering, admin 
 - **data/** → JSON database files (orders, printers, rates, settings)
 
 ## 🚀 Quick Start
+
+### Local Development
 
 ### Option 1: Quick Start Script (Windows)
 
@@ -92,6 +97,31 @@ python main.py
 ```
 
 **Login:** `printhub2025`
+
+### Cloud Deployment (Render, Heroku, AWS, etc.) 🌐
+
+**PrintHub is fully cloud-ready!** Deploy to any platform in minutes.
+
+📖 **Quick Start Guides:**
+- **[RENDER_QUICKSTART.md](RENDER_QUICKSTART.md)** - Deploy to Render in 10 minutes
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Complete deployment guide for all platforms
+- **[ADMIN_APP_SETUP.md](ADMIN_APP_SETUP.md)** - Connect desktop app to hosted backend
+- **[CLOUD_DEPLOYMENT_SUMMARY.md](CLOUD_DEPLOYMENT_SUMMARY.md)** - Complete overview
+
+**Quick Deploy to Render:**
+1. Push code to GitHub
+2. Create Render Blueprint from repository
+3. Configure environment variables (backend URL, CORS)
+4. Deploy both services (5-10 min)
+5. Seed database: `curl -X POST https://your-backend.onrender.com/seed`
+6. Configure admin app to connect to hosted backend
+
+**What's Deployed:**
+- ☁️ Backend API (FastAPI) - Hosted, auto-scaling
+- ☁️ Web Frontend (Next.js) - Students access from anywhere
+- 💻 Admin App (Windows) - Runs locally, connects to cloud backend
+
+**Cost:** Free tier available on Render, Heroku, etc. Production: ~$7-14/month
 
 ## 📖 Usage Guide
 
