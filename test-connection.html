@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PrintHub Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .pending {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        button {
+            background-color: #14b8a6;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0d9488;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🖨️ PrintHub Connection Test</h1>
+    <p>This page tests the connection between the web app and backend API.</p>
+    
+    <button onclick="runTests()">Run Tests</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        
+        async function runTests() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<div class="test pending">Running tests...</div>';
+            
+            const tests = [
+                { name: 'Backend Health Check', endpoint: '/' },
+                { name: 'Get Rates', endpoint: '/rates' },
+                { name: 'Get Orders', endpoint: '/orders' },
+                { name: 'Get Printers', endpoint: '/printers' },
+                { name: 'Get Settings', endpoint: '/settings' }
+            ];
+            
+            let html = '';
+            
+            for (const test of tests) {
+                try {
+                    const response = await fetch(`${API_BASE}${test.endpoint}`);
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        html += `
+                            <div class="test success">
+                                <strong>✅ ${test.name}</strong><br>
+                                Status: ${response.status} OK<br>
+                                <details>
+                                    <summary>View Response</summary>
+                                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                                </details>
+                            </div>
+                        `;
+                    } else {
+                        html += `
+                            <div class="test error">
+                                <strong>❌ ${test.name}</strong><br>
+                                Status: ${response.status}<br>
+                                Error: ${data.detail || 'Unknown error'}
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    html += `
+                        <div class="test error">
+                            <strong>❌ ${test.name}</strong><br>
+                            Error: ${error.message}<br>
+                            <small>This usually means CORS is not configured or backend is not running.</small>
+                        </div>
+                    `;
+                }
+            }
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        // Auto-run tests on load
+        window.addEventListener('load', runTests);
+    </script>
+</body>
+</html>

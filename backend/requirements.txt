@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+tinydb
+pydantic
+python-multipart
+pypdf
+pillow
+python-docx
+pdf2image
+docx2pdf
+pywin32
+python-magic-bin
+aiofiles
