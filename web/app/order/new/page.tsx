@@ -143,7 +143,7 @@ export default function NewOrderPage() {
       localStorage.setItem("recentMobile", formData.mobile);
       
       // Redirect to UPI payment page with order details
-      router.push(`/upi?amount=${price}&orderId=${order.id}&note=Print Order`);
+      router.push(`/upi?amount=${order.priceTotal}&orderId=${order.id}&note=Print Order`);
     } catch (error) {
       console.error("Failed to create order:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to create order";

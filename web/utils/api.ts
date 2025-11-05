@@ -39,6 +39,7 @@ export interface Order {
   size: "A4" | "A3";
   pickupTime?: number;
   status: "Pending" | "Queued" | "Printing" | "Ready" | "Collected" | "Cancelled";
+  paymentStatus: "unpaid" | "paid" | "refunded";
   queueType: "urgent" | "normal" | "bulk";
   priorityIndex: number;
   priceTotal: number;
@@ -174,6 +175,12 @@ export const api = {
     return fetchAPI<Order>(`/orders/${id}`, {
       method: "PATCH",
       body: JSON.stringify(updates),
+    });
+  },
+
+  async confirmPayment(orderId: string): Promise<Order> {
+    return fetchAPI<Order>(`/orders/${orderId}/confirm-payment`, {
+      method: "POST",
     });
   },
 
