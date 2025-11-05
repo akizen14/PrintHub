@@ -1,5 +1,30 @@
 const BASE_URL = "http://localhost:8000";
 
+// Simple in-memory cache with TTL
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+const cache = new Map<string, CacheEntry<any>>();
+const CACHE_TTL = 5000; // 5 seconds
+
+function getCacheKey(endpoint: string, options?: RequestInit): string {
+  return `${endpoint}${JSON.stringify(options || {})}`;
+}
+
+function getFromCache<T>(cacheKey: string): T | null {
+  const cached = cache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data;
+  }
+  return null;
+}
+
+function setCache<T>(cacheKey: string, data: T): void {
+  cache.set(cacheKey, { data, timestamp: Date.now() });
+}
+
 export interface Order {
   id: string;
   studentName: string;
@@ -47,6 +72,15 @@ export interface Rates {
 }
 
 async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
+  // Check cache for GET requests
+  const cacheKey = getCacheKey(endpoint, options);
+  if (!options || options.method === "GET" || !options.method) {
+    const cachedData = getFromCache<T>(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+  }
+
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
     headers: {
@@ -59,7 +93,14 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
     throw new Error(`API Error: ${response.statusText}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  
+  // Cache GET requests
+  if (!options || options.method === "GET" || !options.method) {
+    setCache(cacheKey, data);
+  }
+  
+  return data;
 }
 
 // File upload function (no JSON content-type for FormData)

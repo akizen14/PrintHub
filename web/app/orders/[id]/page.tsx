@@ -28,8 +28,8 @@ export default function OrderDetailPage() {
   useEffect(() => {
     loadOrder();
     
-    // Poll every 3 seconds
-    const interval = setInterval(loadOrder, 3000);
+    // Poll every 5 seconds (reduced from 3 seconds for better performance)
+    const interval = setInterval(loadOrder, 5000);
     return () => clearInterval(interval);
   }, [orderId]);
 

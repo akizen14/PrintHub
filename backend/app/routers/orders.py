@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from fastapi.responses import JSONResponse
 from typing import List, Optional
+from functools import lru_cache
 import time
 import uuid
 import tempfile
@@ -13,6 +14,20 @@ from ..scheduler import classify_queue, priority_score, normalize_priority
 from ..file_handler import process_uploaded_file, FileValidationError, get_file_info
 
 router = APIRouter(prefix="/orders", tags=["orders"])
+
+
+# Cache rates for 60 seconds to reduce disk reads
+@lru_cache(maxsize=1)
+def get_cached_rates(cache_key: int):
+    """Cache rates data for 60 seconds (cache_key is timestamp // 60)."""
+    return get_single("rates")
+
+
+# Cache settings for 60 seconds to reduce disk reads
+@lru_cache(maxsize=1)
+def get_cached_settings(cache_key: int):
+    """Cache settings data for 60 seconds (cache_key is timestamp // 60)."""
+    return get_single("settings")
 
 
 def calculate_price(order_data: dict, rates: dict) -> float:
@@ -76,8 +91,9 @@ async def create_order_with_file(
             order_id
         )
         
-        # Get current rates
-        rates_data = get_single("rates")
+        # Get current rates using cache
+        cache_key = int(time.time() / 60)  # Cache per minute
+        rates_data = get_cached_rates(cache_key)
         if not rates_data:
             raise HTTPException(status_code=500, detail="Rates not configured")
         
@@ -146,13 +162,13 @@ async def create_order(order_in: OrderIn):
     """Create a new print order."""
     now = int(time.time())
     
-    # Get current rates
-    rates_data = get_single("rates")
+    # Get current rates and settings using cache
+    cache_key = int(now / 60)  # Cache per minute
+    rates_data = get_cached_rates(cache_key)
     if not rates_data:
         raise HTTPException(status_code=500, detail="Rates not configured")
     
-    # Get settings for thresholds
-    settings_data = get_single("settings")
+    settings_data = get_cached_settings(cache_key)
     if not settings_data:
         raise HTTPException(status_code=500, detail="Settings not configured")
     
@@ -237,8 +253,9 @@ async def update_order(order_id: str, update: OrderUpdate):
     
     # If priority changed, might need to reclassify
     if "priorityIndex" in updates:
-        # Get settings for recalculation
-        settings_data = get_single("settings")
+        # Get settings for recalculation using cache
+        cache_key = int(updates["updatedAt"] / 60)  # Cache per minute
+        settings_data = get_cached_settings(cache_key)
         if settings_data:
             thresholds = settings_data.get("thresholds", {"smallPages": 15, "chunkPages": 100, "agingMinutes": 12})
             order.update(updates)
