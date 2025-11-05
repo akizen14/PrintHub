@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import QRCode from "qrcode";
 
 /**
@@ -20,6 +20,7 @@ import QRCode from "qrcode";
 
 export default function UPIIntentPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // Get dynamic values from URL params or use defaults
   const upiId = searchParams.get("upiId") || process.env.NEXT_PUBLIC_UPI_ID || "aditya.sonawane.005@okhdfcbank";
@@ -73,7 +74,13 @@ export default function UPIIntentPage() {
 
   // Handle manual confirmation
   const handleConfirmPayment = () => {
-    alert("Thank you! We will verify your payment soon.");
+    // Show confirmation message
+    const confirmed = confirm("Have you completed the UPI payment?\n\nClick OK to proceed to your order.");
+    
+    if (confirmed) {
+      // Redirect to order detail page
+      router.push(`/orders/${orderId}`);
+    }
   };
 
   return (
