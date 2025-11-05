@@ -8,28 +8,30 @@ import tempfile
 from pathlib import Path
 import json
 
-from ..models import Order, OrderIn, OrderUpdate, PaymentConfirmation
-from ..storage import insert_one, find_all, find_by_id, update_by_id, find_by_query, get_single
+from ..models import Order, OrderIn, OrderUpdate, PaymentConfirmation, BatchOrderUpdate
+from ..storage import insert_one, find_all, find_by_id, update_by_id, find_by_query, get_single, batch_update_by_ids, batch_delete_by_ids
 from ..scheduler import classify_queue, priority_score, normalize_priority
 from ..file_handler import process_uploaded_file, FileValidationError, get_file_info
+from ..constants import (
+    STATUS_PENDING, STATUS_QUEUED, STATUS_PRINTING, STATUS_READY,
+    STATUS_COLLECTED, STATUS_CANCELLED,
+    PAYMENT_UNPAID, PAYMENT_PAID, PAYMENT_REFUNDED,
+    CACHE_DURATION_SECONDS
+)
+
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
-# Cache duration in seconds
-CACHE_DURATION_SECONDS = 60
-
-# Order status constants
-ORDER_STATUS_PENDING = "Pending"
-ORDER_STATUS_QUEUED = "Queued"
-ORDER_STATUS_PRINTING = "Printing"
-ORDER_STATUS_READY = "Ready"
-ORDER_STATUS_COLLECTED = "Collected"
-ORDER_STATUS_CANCELLED = "Cancelled"
-
-# Payment status constants
-PAYMENT_STATUS_UNPAID = "unpaid"
-PAYMENT_STATUS_PAID = "paid"
-PAYMENT_STATUS_REFUNDED = "refunded"
+# Legacy constant aliases for backwards compatibility
+ORDER_STATUS_PENDING = STATUS_PENDING
+ORDER_STATUS_QUEUED = STATUS_QUEUED
+ORDER_STATUS_PRINTING = STATUS_PRINTING
+ORDER_STATUS_READY = STATUS_READY
+ORDER_STATUS_COLLECTED = STATUS_COLLECTED
+ORDER_STATUS_CANCELLED = STATUS_CANCELLED
+PAYMENT_STATUS_UNPAID = PAYMENT_UNPAID
+PAYMENT_STATUS_PAID = PAYMENT_PAID
+PAYMENT_STATUS_REFUNDED = PAYMENT_REFUNDED
 
 
 # Cache rates for 60 seconds to reduce disk reads
@@ -71,6 +73,26 @@ def calculate_price(order_data: dict, rates: dict) -> float:
     min_charge = rates.get("minCharge", 0)
     
     return max(total, min_charge)
+
+
+def update_order_with_validation(order_id: str, updates: dict) -> Order:
+    """
+    Helper function to update an order with validation and timestamp.
+    Returns the updated order or raises HTTPException if not found.
+    """
+    order = find_by_id("orders", order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Add timestamp
+    updates["updatedAt"] = int(time.time())
+    
+    # Perform update
+    update_by_id("orders", order_id, updates)
+    
+    # Fetch and return updated order
+    updated_order = find_by_id("orders", order_id)
+    return Order(**updated_order)
 
 
 @router.post("/upload", response_model=Order)
@@ -267,25 +289,21 @@ async def update_order(order_id: str, update: OrderUpdate):
     
     # Prepare updates
     updates = update.model_dump(exclude_unset=True)
-    updates["updatedAt"] = int(time.time())
     
     # If priority changed, might need to reclassify
     if "priorityIndex" in updates:
         # Get settings for recalculation using cache
-        cache_key = int(updates["updatedAt"] / CACHE_DURATION_SECONDS)
+        now = int(time.time())
+        cache_key = int(now / CACHE_DURATION_SECONDS)
         settings_data = get_cached_settings(cache_key)
         if settings_data:
             thresholds = settings_data.get("thresholds", {"smallPages": 15, "chunkPages": 100, "agingMinutes": 12})
             order.update(updates)
-            order["priorityScore"] = priority_score(order, updates["updatedAt"], thresholds)
+            order["priorityScore"] = priority_score(order, now, thresholds)
             updates["priorityScore"] = order["priorityScore"]
     
-    # Update in database
-    update_by_id("orders", order_id, updates)
-    
-    # Fetch updated order
-    updated_order = find_by_id("orders", order_id)
-    return Order(**updated_order)
+    # Use helper function to update
+    return update_order_with_validation(order_id, updates)
 
 
 @router.post("/{order_id}/confirm-payment", response_model=Order)
@@ -314,16 +332,81 @@ async def confirm_payment(order_id: str, payment_data: Optional[PaymentConfirmat
     updates = {
         "paymentStatus": PAYMENT_STATUS_PAID,
         "status": ORDER_STATUS_QUEUED,
-        "paidAt": now,
-        "updatedAt": now
+        "paidAt": now
     }
     
     # Add transaction ID if provided
     if payment_data and payment_data.transactionId:
         updates["transactionId"] = payment_data.transactionId
     
-    update_by_id("orders", order_id, updates)
+    # Use helper function to update
+    return update_order_with_validation(order_id, updates)
+
+
+@router.post("/batch-update")
+async def batch_update_orders(batch_update: BatchOrderUpdate):
+    """
+    Batch update multiple orders at once.
+    Useful for bulk status changes, cancellations, etc.
+    """
+    if not batch_update.orderIds:
+        raise HTTPException(status_code=400, detail="No order IDs provided")
     
-    # Fetch updated order
-    updated_order = find_by_id("orders", order_id)
-    return Order(**updated_order)
+    # Prepare updates
+    updates = batch_update.updates.model_dump(exclude_unset=True)
+    if not updates:
+        raise HTTPException(status_code=400, detail="No updates provided")
+    
+    updates["updatedAt"] = int(time.time())
+    
+    # Perform batch update
+    count = batch_update_by_ids("orders", batch_update.orderIds, updates)
+    
+    return {
+        "message": f"Successfully updated {count} orders",
+        "updatedCount": count,
+        "requestedCount": len(batch_update.orderIds)
+    }
+
+
+@router.post("/batch-delete")
+async def batch_delete_orders(order_ids: List[str]):
+    """
+    Batch delete multiple orders at once.
+    WARNING: This is a permanent deletion. Use batch cancel instead for soft delete.
+    """
+    if not order_ids:
+        raise HTTPException(status_code=400, detail="No order IDs provided")
+    
+    # Perform batch delete
+    count = batch_delete_by_ids("orders", order_ids)
+    
+    return {
+        "message": f"Successfully deleted {count} orders",
+        "deletedCount": count,
+        "requestedCount": len(order_ids)
+    }
+
+
+@router.post("/batch-cancel")
+async def batch_cancel_orders(order_ids: List[str]):
+    """
+    Batch cancel multiple orders at once (soft delete).
+    Sets status to Cancelled instead of permanently deleting.
+    """
+    if not order_ids:
+        raise HTTPException(status_code=400, detail="No order IDs provided")
+    
+    # Update all to Cancelled status
+    updates = {
+        "status": ORDER_STATUS_CANCELLED,
+        "updatedAt": int(time.time())
+    }
+    
+    count = batch_update_by_ids("orders", order_ids, updates)
+    
+    return {
+        "message": f"Successfully cancelled {count} orders",
+        "cancelledCount": count,
+        "requestedCount": len(order_ids)
+    }

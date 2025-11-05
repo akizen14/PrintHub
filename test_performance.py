@@ -67,6 +67,13 @@ def test_app_initialization():
     """Test that FastAPI app loads with all middleware"""
     print("\n=== Testing App Initialization ===")
     try:
+        # Mock Windows modules for testing on Linux
+        import sys
+        from unittest.mock import MagicMock
+        sys.modules['win32print'] = MagicMock()
+        sys.modules['win32api'] = MagicMock()
+        sys.modules['win32con'] = MagicMock()
+        
         from backend.app.main import app
         print(f"✓ App title: {app.title}")
         print(f"✓ Middlewares loaded: {len(app.user_middleware)}")

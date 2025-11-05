@@ -114,10 +114,10 @@ class PrintHubAdmin(QMainWindow):
             "Student", "Mobile", "File Name", "Pages", "Copies", "Type", "Status"
         ])
         
-        # Table styling - Professional theme
+        # Table styling - Professional theme with multi-selection
         self.table.setAlternatingRowColors(True)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.table.setSelectionMode(QTableWidget.SelectionMode.ExtendedSelection)  # Enable multi-selection
         self.table.setStyleSheet("""
             QTableWidget {
                 font-size: 14px;
@@ -284,6 +284,64 @@ class PrintHubAdmin(QMainWindow):
         
         layout.addLayout(btn_layout)
         
+        # Batch action buttons row
+        batch_layout = QHBoxLayout()
+        batch_layout.setSpacing(15)
+        
+        batch_info = QLabel("💡 Hold Ctrl/Cmd to select multiple orders")
+        batch_info.setStyleSheet("color: #64748b; font-size: 12px; font-style: italic;")
+        batch_layout.addWidget(batch_info)
+        
+        batch_layout.addStretch()
+        
+        self.batch_cancel_btn = QPushButton("❌ Cancel Selected")
+        self.batch_cancel_btn.setStyleSheet("""
+            QPushButton {
+                padding: 10px 20px;
+                font-size: 14px;
+                font-weight: bold;
+                background-color: #ef4444;
+                color: white;
+                border: none;
+                border-radius: 6px;
+            }
+            QPushButton:hover {
+                background-color: #dc2626;
+            }
+            QPushButton:disabled {
+                background-color: #e5e7eb;
+                color: #9ca3af;
+            }
+        """)
+        self.batch_cancel_btn.clicked.connect(self.batch_cancel_orders)
+        self.batch_cancel_btn.setEnabled(False)
+        batch_layout.addWidget(self.batch_cancel_btn)
+        
+        self.batch_ready_btn = QPushButton("✅ Mark Selected Ready")
+        self.batch_ready_btn.setStyleSheet("""
+            QPushButton {
+                padding: 10px 20px;
+                font-size: 14px;
+                font-weight: bold;
+                background-color: #10b981;
+                color: white;
+                border: none;
+                border-radius: 6px;
+            }
+            QPushButton:hover {
+                background-color: #059669;
+            }
+            QPushButton:disabled {
+                background-color: #e5e7eb;
+                color: #9ca3af;
+            }
+        """)
+        self.batch_ready_btn.clicked.connect(self.batch_mark_ready)
+        self.batch_ready_btn.setEnabled(False)
+        batch_layout.addWidget(self.batch_ready_btn)
+        
+        layout.addLayout(batch_layout)
+        
         # Status bar
         self.status_label = QLabel("Ready")
         self.status_label.setStyleSheet("color: #16a34a; font-size: 13px; padding: 5px;")
@@ -291,6 +349,7 @@ class PrintHubAdmin(QMainWindow):
         
         # Selected order tracking
         self.selected_order = None
+        self.selected_orders = []  # Track multiple selected orders
         self.orders_data = []
         self.previous_orders_hash = None  # Track changes to avoid unnecessary updates
         
@@ -392,28 +451,54 @@ class PrintHubAdmin(QMainWindow):
             self.table.setRowHeight(row, 50)
     
     def on_selection_changed(self):
-        """Handle row selection"""
-        selected_rows = self.table.selectedIndexes()
+        """Handle row selection - supports both single and multiple selection"""
+        selected_rows = self.table.selectionModel().selectedRows()
+        
         if selected_rows:
-            row = selected_rows[0].row()
-            self.selected_order = self.orders_data[row]
+            # Get all selected orders
+            self.selected_orders = [self.orders_data[row.row()] for row in selected_rows]
             
-            status = self.selected_order.get("status")
+            # For single selection compatibility, keep the first selected order
+            self.selected_order = self.selected_orders[0] if self.selected_orders else None
             
-            # Enable/disable buttons based on status
-            # Only allow printing Queued orders (paid orders)
-            self.print_btn.setEnabled(status == "Queued")
-            self.ready_btn.setEnabled(status == "Printing")
-            self.collected_btn.setEnabled(status == "Ready")
-            self.cancel_btn.setEnabled(status in ["Queued", "Printing"])
-            self.view_file_btn.setEnabled(True)  # Always enabled if order is selected
+            # Enable/disable single action buttons based on single selection
+            if len(self.selected_orders) == 1:
+                status = self.selected_order.get("status")
+                self.print_btn.setEnabled(status == "Queued")
+                self.ready_btn.setEnabled(status == "Printing")
+                self.collected_btn.setEnabled(status == "Ready")
+                self.cancel_btn.setEnabled(status in ["Queued", "Printing"])
+                self.view_file_btn.setEnabled(True)
+            else:
+                # Multiple selection - disable single action buttons
+                self.print_btn.setEnabled(False)
+                self.ready_btn.setEnabled(False)
+                self.collected_btn.setEnabled(False)
+                self.cancel_btn.setEnabled(False)
+                self.view_file_btn.setEnabled(False)
+            
+            # Enable batch buttons if multiple orders selected
+            if len(self.selected_orders) > 1:
+                # Check if any can be cancelled (Queued or Printing)
+                can_cancel = any(o.get("status") in ["Queued", "Printing"] for o in self.selected_orders)
+                self.batch_cancel_btn.setEnabled(can_cancel)
+                
+                # Check if any can be marked ready (Printing)
+                can_ready = any(o.get("status") == "Printing" for o in self.selected_orders)
+                self.batch_ready_btn.setEnabled(can_ready)
+            else:
+                self.batch_cancel_btn.setEnabled(False)
+                self.batch_ready_btn.setEnabled(False)
         else:
             self.selected_order = None
+            self.selected_orders = []
             self.print_btn.setEnabled(False)
             self.ready_btn.setEnabled(False)
             self.collected_btn.setEnabled(False)
             self.cancel_btn.setEnabled(False)
             self.view_file_btn.setEnabled(False)
+            self.batch_cancel_btn.setEnabled(False)
+            self.batch_ready_btn.setEnabled(False)
     
     def send_to_printer(self):
         """Send order to printer using Windows PrintTo verb"""
@@ -578,6 +663,93 @@ class PrintHubAdmin(QMainWindow):
             self.status_label.setText(f"✅ Opened: {os.path.basename(file_path)}")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to open file:\n{str(e)}")
+    
+    def batch_cancel_orders(self):
+        """Cancel multiple selected orders at once"""
+        if not self.selected_orders or len(self.selected_orders) < 2:
+            return
+        
+        # Filter orders that can be cancelled
+        cancellable_orders = [o for o in self.selected_orders if o.get("status") in ["Queued", "Printing"]]
+        
+        if not cancellable_orders:
+            QMessageBox.warning(self, "Error", "No orders can be cancelled from selection")
+            return
+        
+        # Confirm cancellation
+        reply = QMessageBox.question(
+            self,
+            "Batch Cancel Orders",
+            f"Cancel {len(cancellable_orders)} orders?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            try:
+                order_ids = [o.get("id") for o in cancellable_orders]
+                response = requests.post(f"{API_BASE}/orders/batch-cancel", json=order_ids)
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    QMessageBox.information(
+                        self, 
+                        "Success", 
+                        f"Successfully cancelled {result.get('cancelledCount', 0)} orders"
+                    )
+                    self.load_orders()
+                else:
+                    QMessageBox.warning(self, "Error", "Failed to cancel orders")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Batch cancel failed: {str(e)}")
+    
+    def batch_mark_ready(self):
+        """Mark multiple selected orders as ready at once"""
+        if not self.selected_orders or len(self.selected_orders) < 2:
+            return
+        
+        # Filter orders that are in Printing status
+        printing_orders = [o for o in self.selected_orders if o.get("status") == "Printing"]
+        
+        if not printing_orders:
+            QMessageBox.warning(self, "Error", "No printing orders in selection")
+            return
+        
+        # Confirm action
+        reply = QMessageBox.question(
+            self,
+            "Batch Mark Ready",
+            f"Mark {len(printing_orders)} orders as ready?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            try:
+                order_ids = [o.get("id") for o in printing_orders]
+                
+                # Use batch update endpoint
+                response = requests.post(
+                    f"{API_BASE}/orders/batch-update",
+                    json={
+                        "orderIds": order_ids,
+                        "updates": {
+                            "status": "Ready",
+                            "progressPct": 100
+                        }
+                    }
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    QMessageBox.information(
+                        self, 
+                        "Success", 
+                        f"Successfully marked {result.get('updatedCount', 0)} orders as ready"
+                    )
+                    self.load_orders()
+                else:
+                    QMessageBox.warning(self, "Error", "Failed to update orders")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Batch update failed: {str(e)}")
 
 
 def main():
@@ -595,3 +767,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
