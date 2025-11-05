@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { api, Order } from "@/utils/api";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const STATUS_COLORS = {
   Pending: "bg-gray-100 text-gray-800",
@@ -18,6 +19,9 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [mobile, setMobile] = useState("");
+  
+  // Debounce the mobile filter to avoid excessive re-renders
+  const debouncedMobile = useDebounce(mobile, 300);
 
   useEffect(() => {
     // Try to get mobile from localStorage
@@ -42,8 +46,8 @@ export default function OrdersPage() {
     }
   };
 
-  const filteredOrders = mobile
-    ? orders.filter((o) => o.mobile === mobile)
+  const filteredOrders = debouncedMobile
+    ? orders.filter((o) => o.mobile === debouncedMobile)
     : orders;
 
   return (
