@@ -663,23 +663,6 @@ class PrintHubAdmin(QMainWindow):
             self.status_label.setText(f"✅ Opened: {os.path.basename(file_path)}")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to open file:\n{str(e)}")
-
-
-def main():
-    app = QApplication(sys.argv)
-    
-    # Show login dialog
-    login = LoginDialog()
-    if login.exec() == QDialog.DialogCode.Accepted:
-        window = PrintHubAdmin()
-        window.show()
-        sys.exit(app.exec())
-    else:
-        sys.exit(0)
-
-
-if __name__ == "__main__":
-    main()
     
     def batch_cancel_orders(self):
         """Cancel multiple selected orders at once"""
@@ -768,3 +751,20 @@ if __name__ == "__main__":
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Batch update failed: {str(e)}")
 
+
+def main():
+    app = QApplication(sys.argv)
+    
+    # Show login dialog
+    login = LoginDialog()
+    if login.exec() == QDialog.DialogCode.Accepted:
+        window = PrintHubAdmin()
+        window.show()
+        sys.exit(app.exec())
+    else:
+        sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()
+    
