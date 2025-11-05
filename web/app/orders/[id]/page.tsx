@@ -95,13 +95,28 @@ export default function OrderDetailPage() {
               </h1>
               <p className="text-gray-600">Order #{order.id.slice(0, 8)}</p>
             </div>
-            <span
-              className={`px-4 py-2 rounded-full text-sm font-medium ${
-                STATUS_COLORS[order.status]
-              }`}
-            >
-              {order.status}
-            </span>
+            <div className="flex flex-col gap-2 items-end">
+              <span
+                className={`px-4 py-2 rounded-full text-sm font-medium ${
+                  STATUS_COLORS[order.status]
+                }`}
+              >
+                {order.status}
+              </span>
+              {order.paymentStatus && (
+                <span
+                  className={`px-4 py-2 rounded-full text-sm font-medium ${
+                    order.paymentStatus === "paid"
+                      ? "bg-green-100 text-green-800"
+                      : order.paymentStatus === "unpaid"
+                      ? "bg-yellow-100 text-yellow-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
+                >
+                  Payment: {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1).toLowerCase()}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Progress Bar */}
@@ -212,6 +227,16 @@ export default function OrderDetailPage() {
                 {formatPrice(order.priceTotal)}
               </span>
             </div>
+            {order.paymentStatus === "unpaid" && order.status === "Pending" && (
+              <div className="mt-4">
+                <a
+                  href={`/upi?amount=${order.priceTotal}&orderId=${order.id}&note=Print Order`}
+                  className="block w-full text-center bg-purple-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+                >
+                  Complete Payment
+                </a>
+              </div>
+            )}
           </div>
 
           {/* Timestamps */}

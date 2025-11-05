@@ -305,7 +305,8 @@ class PrintHubAdmin(QMainWindow):
     def load_orders(self):
         """Load active orders from backend"""
         try:
-            response = requests.get(f"{API_BASE}/orders?status=Pending|Queued|Printing|Ready")
+            # Only load orders that are Queued or later (paid orders)
+            response = requests.get(f"{API_BASE}/orders?status=Queued|Printing|Ready")
             if response.status_code == 200:
                 new_orders = response.json()
                 
@@ -319,7 +320,7 @@ class PrintHubAdmin(QMainWindow):
                     self.orders_data = new_orders
                     self.previous_orders_hash = orders_hash
                     self.update_table()
-                    self.status_label.setText(f"✅ {len(self.orders_data)} active orders")
+                    self.status_label.setText(f"✅ {len(self.orders_data)} active orders (paid)")
                     self.status_label.setStyleSheet("color: #16a34a; font-size: 13px; padding: 5px;")
         except Exception as e:
             self.status_label.setText(f"❌ Error: {str(e)}")
@@ -400,10 +401,11 @@ class PrintHubAdmin(QMainWindow):
             status = self.selected_order.get("status")
             
             # Enable/disable buttons based on status
-            self.print_btn.setEnabled(status in ["Pending", "Queued"])
+            # Only allow printing Queued orders (paid orders)
+            self.print_btn.setEnabled(status == "Queued")
             self.ready_btn.setEnabled(status == "Printing")
             self.collected_btn.setEnabled(status == "Ready")
-            self.cancel_btn.setEnabled(status in ["Pending", "Queued", "Printing"])
+            self.cancel_btn.setEnabled(status in ["Queued", "Printing"])
             self.view_file_btn.setEnabled(True)  # Always enabled if order is selected
         else:
             self.selected_order = None

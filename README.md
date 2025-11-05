@@ -9,8 +9,10 @@ A lightweight, local-first print management system with student ordering, admin 
 ## 🎯 Features
 
 - ✅ **Student Web Interface** - Easy print ordering with live price preview
+- ✅ **UPI Payment Integration** - QR code-based payment with order tracking
 - ✅ **Real-time Tracking** - Monitor order status and printing progress
 - ✅ **Smart Queue System** - Urgent/Normal/Bulk queues with intelligent ordering
+- ✅ **Payment-based Queue** - Only paid orders enter the print queue
 - ✅ **Admin Desktop App** - Full control over printers and print jobs
 - ✅ **Progress Simulation** - Visual progress bars for active print jobs
 - ✅ **No Database Server** - Everything stored in JSON files (TinyDB)
@@ -99,29 +101,30 @@ python main.py
 2. Click **"New Order"**
 3. Fill in your details:
    - Student name and mobile number
-   - File name
-   - Pages, copies, color/B&W, single/duplex, paper size
+   - Upload file (PDF, DOCX, JPG, PNG)
+   - Select copies, color/B&W, single/duplex, paper size
    - Optional: Pickup time (creates urgent order if within 60 min)
 4. See **live price preview** as you change options
 5. Submit order
-6. Track your order in **"My Orders"**
-7. View real-time progress when printing
+6. **Complete UPI payment:**
+   - Redirected to UPI payment page
+   - Scan QR code or pay via UPI app
+   - Click "I have paid" to confirm payment
+7. Track your order in **"My Orders"**
+8. View real-time progress when printing
 
 ### For Admins (Desktop App)
 
 1. Launch admin app: `python main.py`
 2. Login with passcode: `printhub2025`
-3. View orders in three queues:
-   - 🔴 **Urgent** - Pickup within 60 minutes
-   - 🟢 **Normal** - Small jobs (≤15 pages)
-   - 🟡 **Bulk** - Large jobs (>15 pages)
-4. Select an order to:
-   - Assign a printer
-   - Start printing
-   - Monitor progress (auto-updates every second)
-   - Complete or cancel job
-   - Adjust priority (↑/↓ buttons)
-5. Manage printers:
+3. View **paid orders** in the queue (Queued/Printing/Ready)
+4. Orders appear after payment confirmation
+5. Select an order to:
+   - Print (only for Queued/paid orders)
+   - Monitor progress
+   - Mark as Ready or Collected
+   - Cancel if needed
+6. Manage printers:
    - View status and current jobs
    - Set idle/offline
    - Monitor progress bars
@@ -399,18 +402,17 @@ PrintHub/
 ## 🚧 Non-Goals (Out of Scope)
 
 - ❌ Real printer integration (spooler/driver control)
-- ❌ Payment processing
+- ❌ Automated payment verification (currently manual confirmation)
 - ❌ User authentication (students)
-- ❌ File upload/storage
 - ❌ Email/SMS notifications
 
 These can be added as future enhancements.
 
 ## 🔮 Future Enhancements
 
-- [ ] File upload capability
+- [ ] Real payment gateway integration (Razorpay, PayU)
+- [ ] Automated payment verification via webhooks
 - [ ] Actual printer driver integration
-- [ ] Payment gateway integration
 - [ ] Student authentication
 - [ ] Email/SMS notifications
 - [ ] Print job reports and analytics
@@ -430,8 +432,9 @@ This is a demonstration project. Feel free to fork and customize for your needs.
 
 For issues or questions:
 1. Check the [SETUP.md](SETUP.md) guide
-2. Review API docs at `http://localhost:8000/docs`
-3. Check browser/terminal console for errors
+2. Review [PAYMENT_INTEGRATION.md](PAYMENT_INTEGRATION.md) for payment flow details
+3. Review API docs at `http://localhost:8000/docs`
+4. Check browser/terminal console for errors
 
 ---
 

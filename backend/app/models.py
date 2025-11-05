@@ -13,6 +13,7 @@ class OrderIn(BaseModel):
     sides: Literal["single", "duplex"]
     size: Literal["A4", "A3"]
     pickupTime: Optional[int] = None
+    paymentStatus: Optional[Literal["unpaid", "paid", "refunded"]] = "unpaid"
 
 
 class Order(BaseModel):
@@ -30,6 +31,7 @@ class Order(BaseModel):
     size: Literal["A4", "A3"]
     pickupTime: Optional[int] = None
     status: Literal["Pending", "Queued", "Printing", "Ready", "Collected", "Cancelled", "Error"] = "Pending"
+    paymentStatus: Literal["unpaid", "paid", "refunded"] = "unpaid"
     queueType: Literal["urgent", "normal", "bulk"] = "normal"
     priorityIndex: int
     priorityScore: float = 0.0
@@ -43,6 +45,7 @@ class Order(BaseModel):
 
 class OrderUpdate(BaseModel):
     status: Optional[Literal["Pending", "Queued", "Printing", "Ready", "Collected", "Cancelled", "Error"]] = None
+    paymentStatus: Optional[Literal["unpaid", "paid", "refunded"]] = None
     progressPct: Optional[int] = None
     assignedPrinterId: Optional[str] = None
     priorityIndex: Optional[int] = None
