@@ -10,6 +10,9 @@ services:
         value: 3.11.0
       - key: CORS_ORIGINS
         value: "*"
+        # IMPORTANT: After deployment, update this to your specific frontend URL
+        # Example: https://printhub-web.onrender.com
+        # Using * is convenient for initial setup but should be restricted in production
       - key: DATA_DIR
         value: /opt/render/project/src/data
     disk:

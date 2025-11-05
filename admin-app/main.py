@@ -32,7 +32,7 @@ def get_api_base_url():
                 if "api_url" in config:
                     return config["api_url"].rstrip("/")
         except Exception as e:
-            print(f"Warning: Could not read config.json: {e}")
+            print(f"Warning: Could not read config.json from {config_path}: {e}")
     
     # Default to localhost
     return "http://localhost:8000"
