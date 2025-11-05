@@ -9,7 +9,9 @@ import atexit
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
 
-# Database connection cache for reusing connections
+# Database connection cache for reusing connections across operations.
+# Thread-safe cache that stores TinyDB instances to avoid repeated open/close cycles.
+# Connections are automatically closed on application shutdown via atexit handler.
 _db_cache: Dict[str, TinyDB] = {}
 _db_lock = Lock()
 

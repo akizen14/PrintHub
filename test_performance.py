@@ -52,8 +52,9 @@ def test_lru_cache():
     print(f"✓ First call (cache miss): {time1*1000:.3f}ms")
     print(f"✓ Second call (cache hit): {time2*1000:.3f}ms")
     
-    # Avoid division by zero
-    if time2 > 0:
+    # Avoid division by zero - if cache hit is instant, show as very fast
+    MIN_TIME_THRESHOLD = 0.000001  # 1 microsecond
+    if time2 > MIN_TIME_THRESHOLD:
         print(f"✓ Speedup: {time1/time2:.1f}x faster")
     else:
         print(f"✓ Speedup: >1000x faster (cache hit was instant)")
