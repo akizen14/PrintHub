@@ -5,8 +5,12 @@ from pathlib import Path
 from threading import Lock
 import atexit
 
-# Data directory path - relative to backend folder
-DATA_DIR = Path(__file__).parent.parent.parent / "data"
+# Data directory path - use environment variable or default to relative path
+DATA_DIR_ENV = os.getenv("DATA_DIR")
+if DATA_DIR_ENV:
+    DATA_DIR = Path(DATA_DIR_ENV)
+else:
+    DATA_DIR = Path(__file__).parent.parent.parent / "data"
 DATA_DIR.mkdir(exist_ok=True)
 
 # Database connection cache for reusing connections across operations.

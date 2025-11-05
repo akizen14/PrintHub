@@ -4,6 +4,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 import hashlib
 import time
 import uuid
+import os
 
 from .routers import orders, printers, rates, settings
 from .storage import insert_one, upsert_single, clear_table
@@ -14,10 +15,13 @@ app = FastAPI(title="PrintHub API", version="1.0.0")
 # Add GZIP compression middleware
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-# CORS configuration for local development
+# CORS configuration - use environment variable or default to localhost
+cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001")
+origins_list = [origin.strip() for origin in cors_origins.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_origins=origins_list if cors_origins != "*" else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -47,6 +51,16 @@ app.include_router(settings.router)
 @app.get("/")
 async def root():
     return {"message": "PrintHub API", "version": "1.0.0"}
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for monitoring and load balancers."""
+    return {
+        "status": "healthy",
+        "version": "1.0.0",
+        "timestamp": int(time.time())
+    }
 
 
 @app.post("/seed")

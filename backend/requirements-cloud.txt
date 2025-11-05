@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+tinydb
+pydantic
+python-multipart
+pypdf
+pillow
+python-docx
+pdf2image
+aiofiles
+# Note: The following packages are platform-specific and may not work on all systems:
+# - pywin32 (Windows only) - Not included for cloud deployment
+# - docx2pdf (Windows only) - Not included for cloud deployment
+# - python-magic-bin (Windows only) - Use python-magic on Linux

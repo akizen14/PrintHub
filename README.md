@@ -43,6 +43,8 @@ A lightweight, local-first print management system with student ordering, admin 
 
 ## 🚀 Quick Start
 
+### Local Development
+
 ### Option 1: Quick Start Script (Windows)
 
 ```powershell
@@ -92,6 +94,19 @@ python main.py
 ```
 
 **Login:** `printhub2025`
+
+### Cloud Deployment (Render, Heroku, etc.)
+
+For deploying PrintHub to Render or other cloud platforms, see the **[DEPLOYMENT.md](DEPLOYMENT.md)** guide.
+
+Quick deploy to Render:
+1. Push code to GitHub
+2. Connect repository to Render Blueprint
+3. Configure environment variables
+4. Deploy both backend and frontend services
+5. Seed initial data
+
+**Note:** The admin desktop app (PyQt6) runs locally and connects to your deployed backend API.
 
 ## 📖 Usage Guide
 
