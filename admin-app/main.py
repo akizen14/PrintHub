@@ -291,6 +291,7 @@ class PrintHubAdmin(QMainWindow):
         # Selected order tracking
         self.selected_order = None
         self.orders_data = []
+        self.previous_orders_hash = None  # Track changes to avoid unnecessary updates
         
         # Auto-refresh timer (every 5 seconds)
         self.timer = QTimer()
@@ -305,10 +306,19 @@ class PrintHubAdmin(QMainWindow):
         try:
             response = requests.get(f"{API_BASE}/orders?status=Pending|Queued|Printing|Ready")
             if response.status_code == 200:
-                self.orders_data = response.json()
-                self.update_table()
-                self.status_label.setText(f"✅ {len(self.orders_data)} active orders")
-                self.status_label.setStyleSheet("color: #16a34a; font-size: 13px; padding: 5px;")
+                new_orders = response.json()
+                
+                # Calculate hash of order data to detect changes
+                import json
+                orders_hash = hash(json.dumps(new_orders, sort_keys=True))
+                
+                # Only update UI if data actually changed
+                if orders_hash != self.previous_orders_hash:
+                    self.orders_data = new_orders
+                    self.previous_orders_hash = orders_hash
+                    self.update_table()
+                    self.status_label.setText(f"✅ {len(self.orders_data)} active orders")
+                    self.status_label.setStyleSheet("color: #16a34a; font-size: 13px; padding: 5px;")
         except Exception as e:
             self.status_label.setText(f"❌ Error: {str(e)}")
             self.status_label.setStyleSheet("color: #dc2626; font-size: 13px; padding: 5px;")
