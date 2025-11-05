@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { api, Order } from "@/utils/api";
-import { useDebounce } from "@/lib/hooks/useDebounce";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const STATUS_COLORS = {
   Pending: "bg-gray-100 text-gray-800",
