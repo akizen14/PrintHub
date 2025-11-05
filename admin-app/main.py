@@ -15,6 +15,8 @@ from PyQt6.QtGui import QFont, QColor
 
 API_BASE = "http://localhost:8000"
 
+API_BASE = "http://localhost:8000"
+
 # Temp print directory
 TEMP_PRINT_DIR = r"C:\PrintHub\TempPrint"
 os.makedirs(TEMP_PRINT_DIR, exist_ok=True)
@@ -310,7 +312,9 @@ class PrintHubAdmin(QMainWindow):
                 new_orders = response.json()
                 
                 # Calculate hash of order data to detect changes
-                orders_hash = hash(json.dumps(new_orders, sort_keys=True))
+                # Use MD5 for deterministic hashing across Python sessions
+                orders_json = json.dumps(new_orders, sort_keys=True).encode('utf-8')
+                orders_hash = hashlib.md5(orders_json).hexdigest()
                 
                 # Only update UI if data actually changed
                 if orders_hash != self.previous_orders_hash:

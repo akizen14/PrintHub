@@ -16,7 +16,8 @@ function getCacheKey(endpoint: string, options?: RequestInit): string {
 function getFromCache<T>(cacheKey: string): T | null {
   const cached = cache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    return cached.data;
+    // Type assertion is safe here because we control what goes into the cache
+    return cached.data as T;
   }
   return null;
 }
