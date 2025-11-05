@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Literal
+from typing import Optional, Literal, List
 from datetime import datetime
 
 
@@ -60,6 +60,12 @@ class PaymentConfirmation(BaseModel):
     transactionId: Optional[str] = None
     paymentMethod: Optional[str] = "UPI"
     notes: Optional[str] = None
+
+
+class BatchOrderUpdate(BaseModel):
+    """Model for batch updating multiple orders at once"""
+    orderIds: List[str]
+    updates: OrderUpdate
 
 
 class Printer(BaseModel):

@@ -117,3 +117,27 @@ def upsert_single(table_name: str, data: Dict[str, Any]):
     db.truncate()
     db.insert(data)
     # Don't close - connection is cached
+
+
+def batch_update_by_ids(table_name: str, doc_ids: List[str], updates: Dict[str, Any]) -> int:
+    """Batch update multiple documents by their custom id fields.
+    Returns the count of documents updated."""
+    db = get_db(table_name)
+    Item = Query()
+    
+    # Use a single query to update all matching documents
+    result = db.update(updates, Item.id.test(lambda x: x in doc_ids))
+    # Don't close - connection is cached
+    return len(result)
+
+
+def batch_delete_by_ids(table_name: str, doc_ids: List[str]) -> int:
+    """Batch delete multiple documents by their custom id fields.
+    Returns the count of documents deleted."""
+    db = get_db(table_name)
+    Item = Query()
+    
+    # Use a single query to delete all matching documents
+    result = db.remove(Item.id.test(lambda x: x in doc_ids))
+    # Don't close - connection is cached
+    return len(result)

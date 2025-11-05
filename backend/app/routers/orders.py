@@ -8,8 +8,8 @@ import tempfile
 from pathlib import Path
 import json
 
-from ..models import Order, OrderIn, OrderUpdate, PaymentConfirmation
-from ..storage import insert_one, find_all, find_by_id, update_by_id, find_by_query, get_single
+from ..models import Order, OrderIn, OrderUpdate, PaymentConfirmation, BatchOrderUpdate
+from ..storage import insert_one, find_all, find_by_id, update_by_id, find_by_query, get_single, batch_update_by_ids, batch_delete_by_ids
 from ..scheduler import classify_queue, priority_score, normalize_priority
 from ..file_handler import process_uploaded_file, FileValidationError, get_file_info
 
@@ -327,3 +327,72 @@ async def confirm_payment(order_id: str, payment_data: Optional[PaymentConfirmat
     # Fetch updated order
     updated_order = find_by_id("orders", order_id)
     return Order(**updated_order)
+
+
+@router.post("/batch-update")
+async def batch_update_orders(batch_update: BatchOrderUpdate):
+    """
+    Batch update multiple orders at once.
+    Useful for bulk status changes, cancellations, etc.
+    """
+    if not batch_update.orderIds:
+        raise HTTPException(status_code=400, detail="No order IDs provided")
+    
+    # Prepare updates
+    updates = batch_update.updates.model_dump(exclude_unset=True)
+    if not updates:
+        raise HTTPException(status_code=400, detail="No updates provided")
+    
+    updates["updatedAt"] = int(time.time())
+    
+    # Perform batch update
+    count = batch_update_by_ids("orders", batch_update.orderIds, updates)
+    
+    return {
+        "message": f"Successfully updated {count} orders",
+        "updatedCount": count,
+        "requestedCount": len(batch_update.orderIds)
+    }
+
+
+@router.post("/batch-delete")
+async def batch_delete_orders(order_ids: List[str]):
+    """
+    Batch delete multiple orders at once.
+    WARNING: This is a permanent deletion. Use batch cancel instead for soft delete.
+    """
+    if not order_ids:
+        raise HTTPException(status_code=400, detail="No order IDs provided")
+    
+    # Perform batch delete
+    count = batch_delete_by_ids("orders", order_ids)
+    
+    return {
+        "message": f"Successfully deleted {count} orders",
+        "deletedCount": count,
+        "requestedCount": len(order_ids)
+    }
+
+
+@router.post("/batch-cancel")
+async def batch_cancel_orders(order_ids: List[str]):
+    """
+    Batch cancel multiple orders at once (soft delete).
+    Sets status to Cancelled instead of permanently deleting.
+    """
+    if not order_ids:
+        raise HTTPException(status_code=400, detail="No order IDs provided")
+    
+    # Update all to Cancelled status
+    updates = {
+        "status": ORDER_STATUS_CANCELLED,
+        "updatedAt": int(time.time())
+    }
+    
+    count = batch_update_by_ids("orders", order_ids, updates)
+    
+    return {
+        "message": f"Successfully cancelled {count} orders",
+        "cancelledCount": count,
+        "requestedCount": len(order_ids)
+    }
