@@ -18,6 +18,19 @@ router = APIRouter(prefix="/orders", tags=["orders"])
 # Cache duration in seconds
 CACHE_DURATION_SECONDS = 60
 
+# Order status constants
+ORDER_STATUS_PENDING = "Pending"
+ORDER_STATUS_QUEUED = "Queued"
+ORDER_STATUS_PRINTING = "Printing"
+ORDER_STATUS_READY = "Ready"
+ORDER_STATUS_COLLECTED = "Collected"
+ORDER_STATUS_CANCELLED = "Cancelled"
+
+# Payment status constants
+PAYMENT_STATUS_UNPAID = "unpaid"
+PAYMENT_STATUS_PAID = "paid"
+PAYMENT_STATUS_REFUNDED = "refunded"
+
 
 # Cache rates for 60 seconds to reduce disk reads
 @lru_cache(maxsize=1)
@@ -129,8 +142,8 @@ async def create_order_with_file(
         order = {
             "id": order_id,
             **order_data,
-            "status": "Pending",
-            "paymentStatus": "unpaid",
+            "status": ORDER_STATUS_PENDING,
+            "paymentStatus": PAYMENT_STATUS_UNPAID,
             "queueType": queue_type,
             "priorityIndex": int(now),
             "priorityScore": priority_score_value,
@@ -181,8 +194,8 @@ async def create_order(order_in: OrderIn):
     # Create order dict
     order_dict = order_in.model_dump()
     order_dict["id"] = str(uuid.uuid4())
-    order_dict["status"] = "Pending"
-    order_dict["paymentStatus"] = "unpaid"
+    order_dict["status"] = ORDER_STATUS_PENDING
+    order_dict["paymentStatus"] = PAYMENT_STATUS_UNPAID
     order_dict["priorityIndex"] = now
     order_dict["createdAt"] = now
     order_dict["updatedAt"] = now
@@ -283,20 +296,20 @@ async def confirm_payment(order_id: str):
         raise HTTPException(status_code=404, detail="Order not found")
     
     # Check if order is in Pending status
-    if order.get("status") != "Pending":
+    if order.get("status") != ORDER_STATUS_PENDING:
         raise HTTPException(
             status_code=400, 
             detail=f"Order is already {order.get('status')}. Can only confirm payment for Pending orders."
         )
     
     # Check if payment is already confirmed
-    if order.get("paymentStatus") == "paid":
+    if order.get("paymentStatus") == PAYMENT_STATUS_PAID:
         raise HTTPException(status_code=400, detail="Payment already confirmed")
     
     # Update payment status and move to Queued
     updates = {
-        "paymentStatus": "paid",
-        "status": "Queued",
+        "paymentStatus": PAYMENT_STATUS_PAID,
+        "status": ORDER_STATUS_QUEUED,
         "updatedAt": int(time.time())
     }
     

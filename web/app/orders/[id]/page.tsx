@@ -113,7 +113,7 @@ export default function OrderDetailPage() {
                       : "bg-red-100 text-red-800"
                   }`}
                 >
-                  Payment: {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}
+                  Payment: {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1).toLowerCase()}
                 </span>
               )}
             </div>

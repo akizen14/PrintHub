@@ -76,7 +76,8 @@ export default function UPIIntentPage() {
 
   // Handle manual confirmation
   const handleConfirmPayment = async () => {
-    if (!orderId || orderId.startsWith("ORDER_")) {
+    // Validate order ID (should be a UUID, not the default placeholder)
+    if (!orderId || !orderId.includes('-')) {
       alert("Invalid order ID. Please create an order first.");
       return;
     }
