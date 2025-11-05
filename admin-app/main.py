@@ -5,6 +5,7 @@ import os
 import shutil
 import subprocess
 import json
+from pathlib import Path
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QTableWidget, QTableWidgetItem, QPushButton, QLabel,
@@ -13,7 +14,31 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import QTimer, Qt
 from PyQt6.QtGui import QFont, QColor
 
-API_BASE = "http://localhost:8000"
+# API Base URL - can be configured via environment variable or config file
+# Priority: Environment variable > config.json > default localhost
+def get_api_base_url():
+    """Get API base URL from environment variable or config file"""
+    # Check environment variable first
+    env_url = os.getenv("PRINTHUB_API_URL")
+    if env_url:
+        return env_url.rstrip("/")
+    
+    # Check config file
+    config_path = Path(__file__).parent / "config.json"
+    if config_path.exists():
+        try:
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+                if "api_url" in config:
+                    return config["api_url"].rstrip("/")
+        except Exception as e:
+            print(f"Warning: Could not read config.json: {e}")
+    
+    # Default to localhost
+    return "http://localhost:8000"
+
+API_BASE = get_api_base_url()
+print(f"🔗 Connecting to API: {API_BASE}")
 
 # Temp print directory
 TEMP_PRINT_DIR = r"C:\PrintHub\TempPrint"

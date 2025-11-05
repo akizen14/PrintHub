@@ -343,6 +343,95 @@ For high-traffic scenarios, consider:
 
 See [DOCKER.md](DOCKER.md) for containerized deployment (create this file if needed).
 
+## Connecting Desktop Admin App to Hosted Backend
+
+The PyQt6 desktop admin app runs on Windows and can connect to either localhost or your hosted backend API.
+
+### Setup Options
+
+#### Option 1: Environment Variable (Recommended)
+
+Set the `PRINTHUB_API_URL` environment variable before launching the app:
+
+**Windows PowerShell:**
+```powershell
+$env:PRINTHUB_API_URL="https://printhub-backend.onrender.com"
+python admin-app/main.py
+```
+
+**Windows Command Prompt:**
+```cmd
+set PRINTHUB_API_URL=https://printhub-backend.onrender.com
+python admin-app/main.py
+```
+
+**To make it permanent:**
+1. Open System Properties → Advanced → Environment Variables
+2. Add new user variable: `PRINTHUB_API_URL` = `https://your-backend-url.com`
+3. Restart terminal/app
+
+#### Option 2: Configuration File
+
+Create `admin-app/config.json`:
+
+```json
+{
+  "api_url": "https://printhub-backend.onrender.com"
+}
+```
+
+The app will automatically read this file on startup.
+
+**Example config.json:**
+```json
+{
+  "api_url": "https://printhub-backend.onrender.com",
+  "comment": "Production backend URL"
+}
+```
+
+#### Option 3: Create a Launcher Script
+
+Create `launch-admin.bat` in the admin-app folder:
+
+```batch
+@echo off
+echo Starting PrintHub Admin (Connected to Production)
+set PRINTHUB_API_URL=https://printhub-backend.onrender.com
+python main.py
+pause
+```
+
+Double-click to launch with the configured API URL.
+
+### Verify Connection
+
+When the admin app starts, it will print:
+```
+🔗 Connecting to API: https://printhub-backend.onrender.com
+```
+
+If you see this, the configuration is working correctly.
+
+### Troubleshooting Admin App Connection
+
+**Cannot connect to remote API:**
+1. Verify the backend URL is correct and accessible
+2. Check your internet connection
+3. Ensure CORS is configured correctly on the backend
+4. Test the backend directly: `curl https://your-backend.onrender.com/health`
+
+**Authentication fails:**
+1. Make sure you're using the correct admin password
+2. If you changed the password on the backend, use the new one
+3. Check backend logs for authentication errors
+
+**Printing doesn't work:**
+- The admin app requires local Windows printers
+- Print jobs are submitted to local system printers
+- Files are downloaded from the backend to print locally
+- Ensure the uploaded files are accessible via the backend API
+
 ## Support
 
 For deployment issues:
