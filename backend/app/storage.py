@@ -3,6 +3,7 @@ from typing import Optional, List, Dict, Any
 import os
 from pathlib import Path
 from threading import Lock
+import atexit
 
 # Data directory path - relative to backend folder
 DATA_DIR = Path(__file__).parent.parent.parent / "data"
@@ -11,6 +12,18 @@ DATA_DIR.mkdir(exist_ok=True)
 # Database connection cache for reusing connections
 _db_cache: Dict[str, TinyDB] = {}
 _db_lock = Lock()
+
+
+def _cleanup_connections():
+    """Close all cached database connections on shutdown."""
+    with _db_lock:
+        for db in _db_cache.values():
+            db.close()
+        _db_cache.clear()
+
+
+# Register cleanup function to run on application shutdown
+atexit.register(_cleanup_connections)
 
 
 def get_db(table_name: str) -> TinyDB:

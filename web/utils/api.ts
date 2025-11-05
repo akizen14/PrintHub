@@ -6,7 +6,7 @@ interface CacheEntry<T> {
   timestamp: number;
 }
 
-const cache = new Map<string, CacheEntry<any>>();
+const cache = new Map<string, CacheEntry<unknown>>();
 const CACHE_TTL = 5000; // 5 seconds
 
 function getCacheKey(endpoint: string, options?: RequestInit): string {
@@ -74,7 +74,7 @@ export interface Rates {
 async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> {
   // Check cache for GET requests
   const cacheKey = getCacheKey(endpoint, options);
-  if (!options || options.method === "GET" || !options.method) {
+  if (!options || !options.method || options.method === "GET") {
     const cachedData = getFromCache<T>(cacheKey);
     if (cachedData) {
       return cachedData;
@@ -96,7 +96,7 @@ async function fetchAPI<T>(endpoint: string, options?: RequestInit): Promise<T> 
   const data = await response.json();
   
   // Cache GET requests
-  if (!options || options.method === "GET" || !options.method) {
+  if (!options || !options.method || options.method === "GET") {
     setCache(cacheKey, data);
   }
   

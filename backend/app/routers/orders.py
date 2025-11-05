@@ -15,18 +15,21 @@ from ..file_handler import process_uploaded_file, FileValidationError, get_file_
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
+# Cache duration in seconds
+CACHE_DURATION_SECONDS = 60
+
 
 # Cache rates for 60 seconds to reduce disk reads
 @lru_cache(maxsize=1)
 def get_cached_rates(cache_key: int):
-    """Cache rates data for 60 seconds (cache_key is timestamp // 60)."""
+    """Cache rates data for CACHE_DURATION_SECONDS (cache_key is timestamp // CACHE_DURATION_SECONDS)."""
     return get_single("rates")
 
 
 # Cache settings for 60 seconds to reduce disk reads
 @lru_cache(maxsize=1)
 def get_cached_settings(cache_key: int):
-    """Cache settings data for 60 seconds (cache_key is timestamp // 60)."""
+    """Cache settings data for CACHE_DURATION_SECONDS (cache_key is timestamp // CACHE_DURATION_SECONDS)."""
     return get_single("settings")
 
 
@@ -92,7 +95,7 @@ async def create_order_with_file(
         )
         
         # Get current rates using cache
-        cache_key = int(time.time() / 60)  # Cache per minute
+        cache_key = int(time.time() / CACHE_DURATION_SECONDS)
         rates_data = get_cached_rates(cache_key)
         if not rates_data:
             raise HTTPException(status_code=500, detail="Rates not configured")
@@ -163,7 +166,7 @@ async def create_order(order_in: OrderIn):
     now = int(time.time())
     
     # Get current rates and settings using cache
-    cache_key = int(now / 60)  # Cache per minute
+    cache_key = int(now / CACHE_DURATION_SECONDS)
     rates_data = get_cached_rates(cache_key)
     if not rates_data:
         raise HTTPException(status_code=500, detail="Rates not configured")
@@ -254,7 +257,7 @@ async def update_order(order_id: str, update: OrderUpdate):
     # If priority changed, might need to reclassify
     if "priorityIndex" in updates:
         # Get settings for recalculation using cache
-        cache_key = int(updates["updatedAt"] / 60)  # Cache per minute
+        cache_key = int(updates["updatedAt"] / CACHE_DURATION_SECONDS)
         settings_data = get_cached_settings(cache_key)
         if settings_data:
             thresholds = settings_data.get("thresholds", {"smallPages": 15, "chunkPages": 100, "agingMinutes": 12})

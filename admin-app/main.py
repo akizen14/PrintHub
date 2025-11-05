@@ -4,6 +4,7 @@ import requests
 import os
 import shutil
 import subprocess
+import json
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QTableWidget, QTableWidgetItem, QPushButton, QLabel,
@@ -309,7 +310,6 @@ class PrintHubAdmin(QMainWindow):
                 new_orders = response.json()
                 
                 # Calculate hash of order data to detect changes
-                import json
                 orders_hash = hash(json.dumps(new_orders, sort_keys=True))
                 
                 # Only update UI if data actually changed
