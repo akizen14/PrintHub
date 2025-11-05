@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import QRCode from "qrcode";
+import { api } from "@/utils/api";
 
 /**
  * UPI Intent Payment Page - Dynamic
@@ -20,6 +21,7 @@ import QRCode from "qrcode";
 
 export default function UPIIntentPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // Get dynamic values from URL params or use defaults
   const upiId = searchParams.get("upiId") || process.env.NEXT_PUBLIC_UPI_ID || "aditya.sonawane.005@okhdfcbank";
@@ -32,6 +34,7 @@ export default function UPIIntentPage() {
   const [upiLink, setUpiLink] = useState("");
   const [qrCode, setQrCode] = useState("");
   const [loading, setLoading] = useState(true);
+  const [confirming, setConfirming] = useState(false);
 
   // Generate UPI deep link and QR code when params change
   useEffect(() => {
@@ -72,8 +75,26 @@ export default function UPIIntentPage() {
   };
 
   // Handle manual confirmation
-  const handleConfirmPayment = () => {
-    alert("Thank you! We will verify your payment soon.");
+  const handleConfirmPayment = async () => {
+    if (!orderId || orderId.startsWith("ORDER_")) {
+      alert("Invalid order ID. Please create an order first.");
+      return;
+    }
+
+    setConfirming(true);
+    try {
+      // Call the payment confirmation API
+      await api.confirmPayment(orderId);
+      
+      // Redirect to order details page
+      router.push(`/orders/${orderId}`);
+    } catch (error) {
+      console.error("Failed to confirm payment:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to confirm payment";
+      alert(`Payment confirmation failed: ${errorMessage}`);
+    } finally {
+      setConfirming(false);
+    }
   };
 
   return (
@@ -147,9 +168,10 @@ export default function UPIIntentPage() {
         {/* Manual Confirmation Button */}
         <button 
           onClick={handleConfirmPayment}
-          className="w-full mt-3 border-2 border-gray-300 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all"
+          disabled={confirming}
+          className="w-full mt-3 border-2 border-gray-300 text-gray-700 py-3 px-6 rounded-lg font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          I have paid
+          {confirming ? "Confirming..." : "I have paid"}
         </button>
 
         {/* Supported Apps Note */}

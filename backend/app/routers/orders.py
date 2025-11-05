@@ -130,6 +130,7 @@ async def create_order_with_file(
             "id": order_id,
             **order_data,
             "status": "Pending",
+            "paymentStatus": "unpaid",
             "queueType": queue_type,
             "priorityIndex": int(now),
             "priorityScore": priority_score_value,
@@ -181,6 +182,7 @@ async def create_order(order_in: OrderIn):
     order_dict = order_in.model_dump()
     order_dict["id"] = str(uuid.uuid4())
     order_dict["status"] = "Pending"
+    order_dict["paymentStatus"] = "unpaid"
     order_dict["priorityIndex"] = now
     order_dict["createdAt"] = now
     order_dict["updatedAt"] = now
@@ -266,6 +268,38 @@ async def update_order(order_id: str, update: OrderUpdate):
             updates["priorityScore"] = order["priorityScore"]
     
     # Update in database
+    update_by_id("orders", order_id, updates)
+    
+    # Fetch updated order
+    updated_order = find_by_id("orders", order_id)
+    return Order(**updated_order)
+
+
+@router.post("/{order_id}/confirm-payment", response_model=Order)
+async def confirm_payment(order_id: str):
+    """Confirm payment for an order and move it to Queued status."""
+    order = find_by_id("orders", order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Check if order is in Pending status
+    if order.get("status") != "Pending":
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Order is already {order.get('status')}. Can only confirm payment for Pending orders."
+        )
+    
+    # Check if payment is already confirmed
+    if order.get("paymentStatus") == "paid":
+        raise HTTPException(status_code=400, detail="Payment already confirmed")
+    
+    # Update payment status and move to Queued
+    updates = {
+        "paymentStatus": "paid",
+        "status": "Queued",
+        "updatedAt": int(time.time())
+    }
+    
     update_by_id("orders", order_id, updates)
     
     # Fetch updated order
