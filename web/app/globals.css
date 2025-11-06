@@ -172,8 +172,9 @@
   background-clip: text;
 }
 
-/* Smooth transitions */
-* {
+/* Smooth transitions - only for elements with transition classes */
+.transition,
+[class*='transition-'] {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
