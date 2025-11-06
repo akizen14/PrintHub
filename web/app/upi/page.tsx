@@ -148,6 +148,7 @@ function UPIIntentPageContent() {
             </div>
           ) : qrCode ? (
             <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
                 src={qrCode} 
                 alt="UPI QR Code" 
